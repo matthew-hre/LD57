@@ -2,8 +2,11 @@ local config = require("config")
 local assets = require("assets")
 local player = require("player")
 local camera = require("camera")
+local particle = require("particle")
 
 local canvas
+local debugMode = false
+local gridSize = 32
 
 function love.load()
     love.window.setMode(config.window.width, config.window.height, { resizable = false })
@@ -13,6 +16,7 @@ function love.load()
     canvas = love.graphics.newCanvas(config.screen.width, config.screen.height)
 
     assets.load()
+    particle.load()
     player.load()
     camera.load(config)
 end
@@ -20,6 +24,13 @@ end
 function love.update(dt)
     player.update(dt)
     camera.update(player.x, player.y)
+    particle.update(dt)
+end
+
+function love.keypressed(key)
+    if key == "f1" then
+        debugMode = not debugMode
+    end
 end
 
 function love.mousepressed(x, y, button)
@@ -34,6 +45,23 @@ function love.mousereleased(x, y, button)
     end
 end
 
+function drawGrid()
+    love.graphics.setColor(config.visual.gridColor)
+    
+    local startX = math.floor(camera.x / gridSize) * gridSize
+    local startY = math.floor(camera.y / gridSize) * gridSize
+    local endX = camera.x + config.screen.width
+    local endY = camera.y + config.screen.height
+    
+    for x = startX, endX, gridSize do
+        love.graphics.line(x, startY, x, endY)
+    end
+    
+    for y = startY, endY, gridSize do
+        love.graphics.line(startX, y, endX, y)
+    end
+end
+
 function love.draw()
     love.graphics.setCanvas(canvas)
     love.graphics.clear()
@@ -43,10 +71,19 @@ function love.draw()
 
     love.graphics.push()
     love.graphics.translate(-math.floor(camera.x), -math.floor(camera.y))
-
+    
+    if debugMode then
+        drawGrid()
+    end
+    
+    particle.draw()
     player.draw()
 
     love.graphics.pop()
+
+    if debugMode then
+        camera.drawDebug()
+    end
 
     love.graphics.setCanvas()
     love.graphics.setColor(1, 1, 1)

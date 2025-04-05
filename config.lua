@@ -8,6 +8,8 @@ local config = {
     visual = {
         shadowColor = {0, 105/255, 170/255, 1},
         groundColor = {0.847, 0.475, 0.267, 1},
+        altGroundColor = {190/255, 74/255, 47/255, 1},
+        gridColor = {0.557, 0.173, 0.208, 1},
         angleSnapFactor = 16
     },
     
