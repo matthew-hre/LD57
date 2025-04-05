@@ -1,8 +1,9 @@
 local config = require("config")
 local assets = require("assets")
+local particle = require("particle")
+local terrain = require("terrain")
 local player = require("player")
 local camera = require("camera")
-local particle = require("particle")
 
 local canvas
 local debugMode = false
@@ -17,8 +18,17 @@ function love.load()
 
     assets.load()
     particle.load()
-    player.load()
+    
     camera.load(config)
+    
+    terrain.load()
+    
+    camera.setTerrainDimensions(terrain.width, terrain.height, terrain.tileSize)
+    
+    player.load()
+    
+    camera.x = player.x - config.screen.width / 2
+    camera.y = player.y - config.screen.height / 2
 end
 
 function love.update(dt)
@@ -71,6 +81,8 @@ function love.draw()
 
     love.graphics.push()
     love.graphics.translate(-math.floor(camera.x), -math.floor(camera.y))
+    
+    terrain.draw()
     
     if debugMode then
         drawGrid()

@@ -4,11 +4,9 @@ local config = require("config")
 local assets = require("assets")
 local camera = require("camera")
 local particle = require("particle")
+local terrain = require("terrain")
 
 player.config = {
-    startX = config.screen.width / 2,
-    startY = 32,
-    
     speed = 100,
     maxSpeed = 200,
     acceleration = 400,
@@ -23,14 +21,18 @@ player.config = {
     topParticleSpeed = 20,
     particleScale = 0.7,
     particleScaleDecay = 1.5,
+    
+    drillRadius = 9,
 }
 
 function player.load()
     player.sprite = assets.playerSprite
     player.particleSprite = assets.particleSprite
     player.shadowColor = assets.shadowColor
-    player.x = player.config.startX
-    player.y = player.config.startY
+    
+    player.x = terrain.width * terrain.tileSize / 2
+    player.y = terrain.height * terrain.tileSize / 2
+    
     player.speed = player.config.speed
     player.maxSpeed = player.config.maxSpeed
     player.acceleration = player.config.acceleration
@@ -45,7 +47,6 @@ function player.load()
     player.mouseDown = false
     player.targetAngle = 0
     
-    -- Particle timing
     player.particleTimer = 0
     player.width = player.sprite:getWidth()
     player.height = player.sprite:getHeight()
@@ -67,7 +68,6 @@ function player.update(dt)
         player.vx = player.vx + dirX * player.acceleration * dt
         player.vy = player.vy + dirY * player.acceleration * dt
     else
-        -- Apply drag
         if not player.mouseDown then
             local speed = math.sqrt(player.vx * player.vx + player.vy * player.vy)
             if speed > 0 then
@@ -81,7 +81,6 @@ function player.update(dt)
         end
     end
 
-    -- Clamp speed
     local speed = math.sqrt(player.vx * player.vx + player.vy * player.vy)
     if speed > player.maxSpeed then
         local scale = player.maxSpeed / speed
@@ -89,14 +88,40 @@ function player.update(dt)
         player.vy = player.vy * scale
     end
 
-    player.x = player.x + player.vx * dt
-    player.y = player.y + player.vy * dt
+    local newX = player.x + player.vx * dt
+    local newY = player.y + player.vy * dt
+    
+    local collisionRadius = math.min(player.width, player.height) * 0.3
+    
+    local minX = collisionRadius
+    local maxX = terrain.width * terrain.tileSize - collisionRadius
+    local minY = collisionRadius
+    local maxY = terrain.height * terrain.tileSize - collisionRadius
+    
+    if newX < minX then
+        newX = minX
+        player.vx = 0
+    elseif newX > maxX then
+        newX = maxX
+        player.vx = 0
+    end
+    
+    if newY < minY then
+        newY = minY
+        player.vy = 0
+    elseif newY > maxY then
+        newY = maxY
+        player.vy = 0
+    end
+    
+    player.x = newX
+    player.y = newY
+    
+    terrain.digCircle(player.x, player.y, player.config.drillRadius)
 
-    -- Face movement direction if moving
     if speed > 1 then
         player.angle = math.atan2(player.vy, player.vx)
         
-        -- Spawn particles when moving
         player.particleTimer = player.particleTimer - dt
         if player.particleTimer <= 0 then
             player.spawnParticles(speed)
@@ -126,33 +151,21 @@ function player.spawnParticles(speed)
     
     local exhaustSpeed = player.config.exhaustParticleSpeed * speedRatio
     
-    local particleAngle = player.angle + math.pi  -- Opposite of movement direction
+    local particleAngle = player.angle + math.pi
     particle.create(leftCornerX, leftCornerY, player.particleSprite, {
         vx = -player.vx * 0.2 + math.cos(particleAngle) * exhaustSpeed,
         vy = -player.vy * 0.2 + math.sin(particleAngle) * exhaustSpeed,
         scale = player.config.particleScale * (0.7 + 0.3 * speedRatio),
         scaleDecay = player.config.particleScaleDecay,
-        color = config.visual.altGroundColor
+        color = config.visual.groundColor
     })
     
-    -- Right back corner particle
     particle.create(rightCornerX, rightCornerY, player.particleSprite, {
         vx = -player.vx * 0.2 + math.cos(particleAngle) * exhaustSpeed,
         vy = -player.vy * 0.2 + math.sin(particleAngle) * exhaustSpeed,
         scale = player.config.particleScale * (0.7 + 0.3 * speedRatio),
         scaleDecay = player.config.particleScaleDecay,
-        color = config.visual.altGroundColor
-    })
-    
-    -- Spawn particles from top center (spray in all directions)
-    local topParticleSpeed = player.config.topParticleSpeed * speedRatio
-    local randomAngle = math.random() * math.pi * 2  -- Random direction (0-360 degrees)
-    particle.create(topCenterX, topCenterY, player.particleSprite, {
-        vx = math.cos(randomAngle) * topParticleSpeed,
-        vy = math.sin(randomAngle) * topParticleSpeed,
-        scale = player.config.particleScale * 0.6 * speedRatio,
-        scaleDecay = player.config.particleScaleDecay,
-        color = config.visual.altGroundColor
+        color = config.visual.groundColor
     })
 end
 
