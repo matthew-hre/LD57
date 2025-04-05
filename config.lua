@@ -7,6 +7,7 @@ local config = {
     
     visual = {
         shadowColor = {0, 105/255, 170/255, 1},
+        groundColor = {0.847, 0.475, 0.267, 1},
         angleSnapFactor = 16
     },
     

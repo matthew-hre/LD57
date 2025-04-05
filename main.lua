@@ -1,7 +1,7 @@
 local config = require("config")
 local assets = require("assets")
-
 local player = require("player")
+local camera = require("camera")
 
 local canvas
 
@@ -14,26 +14,39 @@ function love.load()
 
     assets.load()
     player.load()
+    camera.load(config)
 end
 
 function love.update(dt)
-    -- Update game logic here
+    player.update(dt)
+    camera.update(player.x, player.y)
 end
 
 function love.mousepressed(x, y, button)
-    -- Handle mouse press events here
+    if button == 1 then
+        player.mouseDown = true
+    end
+end
+
+function love.mousereleased(x, y, button)
+    if button == 1 then
+        player.mouseDown = false
+    end
 end
 
 function love.draw()
     love.graphics.setCanvas(canvas)
     love.graphics.clear()
 
-    love.graphics.setColor(0, 0, 0)
+    love.graphics.setColor(config.visual.groundColor)
     love.graphics.rectangle("fill", 0, 0, config.screen.width, config.screen.height)
 
+    love.graphics.push()
+    love.graphics.translate(-math.floor(camera.x), -math.floor(camera.y))
 
     player.draw()
 
+    love.graphics.pop()
 
     love.graphics.setCanvas()
     love.graphics.setColor(1, 1, 1)
