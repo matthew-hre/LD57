@@ -2,7 +2,7 @@ local config = {
     screen = {
         width = 192,
         height = 256,
-        scale = 4
+        scale = 3
     },
     
     visual = {
@@ -15,7 +15,7 @@ local config = {
     
     game = {
         title = "Ludum Dare 57",
-    },
+    }
 }
 
 config.window = {
